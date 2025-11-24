@@ -1,185 +1,131 @@
-// Check if user is logged in when page loads
-window.addEventListener('DOMContentLoaded', () => {
-    const currentUser = getCurrentUser();
-    
-    // If on index.html and not logged in, redirect to login
-    if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
-        if (!currentUser) {
-            window.location.href = 'login.html';
-        } else {
-            displayWelcomeMessage(currentUser);
-        }
-    }
-});
+// Check if user is logged in when page loa
+// auth.js - Handle login and registration
 
-// Get current logged in user from localStorage
-function getCurrentUser() {
-    const userStr = localStorage.getItem('currentUser');
-    return userStr ? JSON.parse(userStr) : null;
-}
-
-// Save user to localStorage
-function saveUser(user) {
-    localStorage.setItem('currentUser', JSON.stringify(user));
-}
-
-// Remove user from localStorage
-function removeUser() {
-    localStorage.removeItem('currentUser');
-}
-
-// Display welcome message
-function displayWelcomeMessage(user) {
-    const welcomeMessage = document.getElementById('welcomeMessage');
-    if (welcomeMessage) {
-        welcomeMessage.textContent = `Welcome, ${user.username}! 👋`;
-    }
-}
-
-// Handle Login Form Submit
-async function handleLogin(event) {
-    event.preventDefault();
-    
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const loginBtn = document.getElementById('loginBtn');
-    const errorMessage = document.getElementById('errorMessage');
-    const successMessage = document.getElementById('successMessage');
-    
-    // Hide previous messages
-    errorMessage.style.display = 'none';
-    successMessage.style.display = 'none';
-    
-    // Disable button and show loading
-    loginBtn.disabled = true;
-    loginBtn.textContent = 'Logging in...';
-    
-    try {
-        // Call backend API
-        const response = await fetch(`${CONFIG.API_BASE_URL}/user/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Login successful
-            successMessage.textContent = 'Login successful! Redirecting...';
-            successMessage.style.display = 'block';
-            
-            // Save user data
-            saveUser(data);
-            
-            // Redirect to main page after 1 second
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1000);
-            
-        } else {
-            // Login failed
-            errorMessage.textContent = data.error || 'Invalid username or password';
-            errorMessage.style.display = 'block';
-            loginBtn.disabled = false;
-            loginBtn.textContent = 'Login';
-        }
-        
-    } catch (error) {
-        console.error('Login error:', error);
-        errorMessage.textContent = 'Unable to connect to server. Please try again.';
-        errorMessage.style.display = 'block';
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Login';
-    }
-}
-
-// Handle Register Form Submit
+// Handle Registration
 async function handleRegister(event) {
     event.preventDefault();
     
-    const username = document.getElementById('username').value;
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-    const registerBtn = document.getElementById('registerBtn');
-    const errorMessage = document.getElementById('errorMessage');
-    const successMessage = document.getElementById('successMessage');
+    console.log('Register button clicked!'); // Debug log
     
-    // Hide previous messages
-    errorMessage.style.display = 'none';
-    successMessage.style.display = 'none';
+    const username = document.getElementById('reg-username').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
     
-    // Validate passwords match
-    if (password !== confirmPassword) {
-        errorMessage.textContent = 'Passwords do not match!';
-        errorMessage.style.display = 'block';
+    console.log('Form values:', { username, email, password }); // Debug log
+    
+    // Basic validation
+    if (!username || !email || !password) {
+        showAlert('All fields are required!', 'error');
         return;
     }
     
-    // Validate password length
     if (password.length < 6) {
-        errorMessage.textContent = 'Password must be at least 6 characters long!';
-        errorMessage.style.display = 'block';
+        showAlert('Password must be at least 6 characters!', 'error');
         return;
     }
-    
-    // Disable button and show loading
-    registerBtn.disabled = true;
-    registerBtn.textContent = 'Creating Account...';
     
     try {
-        // Call backend API
-        const response = await fetch(`${CONFIG.API_BASE_URL}/user/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                username: username,
-                email: email,
-                password: password
-            })
-        });
+        console.log('Calling backend API...'); // Debug log
         
-        const data = await response.json();
+        const result = await registerUser(username, email, password);
         
-        if (response.ok) {
-            // Registration successful
-            successMessage.textContent = 'Account created successfully! Redirecting to login...';
-            successMessage.style.display = 'block';
+        console.log('Backend response:', result); // Debug log
+        
+        if (result.success) {
+            showAlert('Registration successful! Redirecting to login...', 'success');
             
             // Redirect to login page after 2 seconds
             setTimeout(() => {
                 window.location.href = 'login.html';
             }, 2000);
-            
         } else {
-            // Registration failed
-            errorMessage.textContent = data.error || 'Registration failed. Please try again.';
-            errorMessage.style.display = 'block';
-            registerBtn.disabled = false;
-            registerBtn.textContent = 'Create Account';
+            showAlert('Registration failed: ' + result.message, 'error');
         }
-        
     } catch (error) {
         console.error('Registration error:', error);
-        errorMessage.textContent = 'Unable to connect to server. Please try again.';
-        errorMessage.style.display = 'block';
-        registerBtn.disabled = false;
-        registerBtn.textContent = 'Create Account';
+        showAlert('Error: Cannot connect to server. Make sure backend is running on port 8080!', 'error');
     }
 }
 
-// Handle Logout
+// Handle Login
+async function handleLogin(event) {
+    event.preventDefault();
+    
+    console.log('Login button clicked!'); // Debug log
+    
+    const username = document.getElementById('reg-username').value.trim();
+    const password = document.getElementById('reg-password').value;
+    
+    console.log('Login values:', { username, password }); // Debug log
+    
+    if (!username || !password) {
+        showAlert('All fields are required!', 'error');
+        return;
+    }
+    
+    try {
+        console.log('Calling backend API...'); // Debug log
+        
+        const result = await loginUser(username, password);
+        
+        console.log('Backend response:', result); // Debug log
+        
+        if (result.success) {
+            // Store user info in localStorage
+            localStorage.setItem('userId', result.data.userId);
+            localStorage.setItem('username', result.data.username);
+            localStorage.setItem('email', result.data.email);
+            
+            showAlert('Login successful! Redirecting...', 'success');
+            
+            // Redirect to main page
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1500);
+        } else {
+            showAlert('Login failed: ' + result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        showAlert('Error: Cannot connect to server. Make sure backend is running on port 8080!', 'error');
+    }
+}
+
+// Show alert message
+function showAlert(message, type) {
+    const alertBox = document.getElementById('alert-message');
+    
+    if (alertBox) {
+        alertBox.textContent = message;
+        alertBox.className = 'alert alert-' + type;
+        alertBox.style.display = 'block';
+        
+        // Hide after 5 seconds
+        setTimeout(() => {
+            alertBox.style.display = 'none';
+        }, 5000);
+    } else {
+        // Fallback to alert if element doesn't exist
+        alert(message);
+    }
+}
+
+// Logout function
 function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        removeUser();
+    localStorage.clear();
+    window.location.href = 'login.html';
+}
+
+// Check if user is logged in (for protected pages)
+function checkAuth() {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
         window.location.href = 'login.html';
+    } else {
+        // Display username if element exists
+        const usernameDisplay = document.getElementById('username-display');
+        if (usernameDisplay) {
+            usernameDisplay.textContent = 'Welcome, ' + localStorage.getItem('username') + '!';
+        }
     }
 }
