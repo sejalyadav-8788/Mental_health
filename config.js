@@ -1,6 +1,25 @@
-const CONFIG = {
-    API_BASE_URL: 'http://localhost:8080/api',  // Change this to your backend URL
-    // Example: 'http://192.168.1.100:8080/api' if backend is on another computer
+// API Configuration
+const API_CONFIG = {
+    BASE_URL: 'http://localhost:8080/api',
+    ENDPOINTS: {
+        // Auth endpoints
+        REGISTER: '/auth/register',
+        LOGIN: '/auth/login',
+        LOGOUT: '/auth/logout',
+        
+        // User endpoints
+        USER_PROFILE: '/users/profile',
+        UPDATE_PROFILE: '/users/profile',
+        
+        // Assessment endpoints
+        CREATE_ASSESSMENT: '/assessments',
+        GET_ASSESSMENTS: '/assessments/user',
+        GET_ASSESSMENT_BY_ID: '/assessments',
+        DELETE_ASSESSMENT: '/assessments'
+    }
 };
 
-console.log('Config loaded. Backend URL:', CONFIG.API_BASE_URL);
+// Get full API URL
+function getApiUrl(endpoint) {
+    return API_CONFIG.BASE_URL + endpoint;
+}
