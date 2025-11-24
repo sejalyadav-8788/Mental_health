@@ -1,95 +1,192 @@
-const API = {
-    // Get current user ID
-    getCurrentUserId() {
-        const user = getCurrentUser();
-        return user ? user.id : null;
-    },
+// API Helper Functions
 
-    // Stress Assessment APIs
-    async submitStressAssessment(assessmentData) {
+// Get authorization header
+function getAuthHeader() {
+    const token = localStorage.getItem('token');
+    return {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+    };
+}
+
+// Generic API call wrapper - THIS WAS MISSING OR BROKEN
+async function apiCall(endpoint, options = {}) {
+    try {
+        const token = localStorage.getItem('token');
+        
+        const defaultOptions = {
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token && { 'Authorization': `Bearer ${token}` })
+            }
+        };
+        
+        const url = getApiUrl(endpoint);
+        console.log('API Call to:', url, 'with options:', options);
+        
+        const response = await fetch(url, { ...defaultOptions, ...options });
+        
+        console.log('Response status:', response.status);
+        
+        // Handle unauthorized
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+            return { success: false, error: 'Unauthorized' };
+        }
+        
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (!response.ok) {
+            throw new Error(data.message || data.error || 'Something went wrong');
+        }
+        
+        return { success: true, data };
+        
+    } catch (error) {
+        console.error('API Error:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// User Authentication APIs
+const AuthAPI = {
+    register: async (userData) => {
+        console.log('AuthAPI.register called with:', userData);
+        
         try {
-            const userId = this.getCurrentUserId();
-            const response = await fetch(`${CONFIG.API_BASE_URL}/stress-assessment`, {
+            const result = await apiCall(API_CONFIG.ENDPOINTS.REGISTER, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    ...assessmentData,
-                    userId: userId
-                })
+                body: JSON.stringify(userData)
             });
             
-            if (!response.ok) {
-                throw new Error('Failed to submit assessment');
+            console.log('Register API result:', result);
+            
+            // Handle nested response from ApiResponseDTO
+            if (result && result.success && result.data) {
+                if (result.data.success) {
+                    return { 
+                        success: true, 
+                        data: result.data.data 
+                    };
+                } else {
+                    return { 
+                        success: false, 
+                        error: result.data.message || 'Registration failed' 
+                    };
+                }
             }
             
-            return await response.json();
-        } catch (error) {
-            console.error('Error submitting assessment:', error);
-            throw error;
-        }
-    },
-
-    async getUserAssessments() {
-        try {
-            const userId = this.getCurrentUserId();
-            if (!userId) return [];
-            
-            const response = await fetch(`${CONFIG.API_BASE_URL}/stress-assessment/user/${userId}`);
-            
-            if (!response.ok) {
-                throw new Error('Failed to fetch assessments');
+            // If result is not successful
+            if (result && !result.success) {
+                return { 
+                    success: false, 
+                    error: result.error || 'Registration failed' 
+                };
             }
             
-            return await response.json();
+            return result;
+            
         } catch (error) {
-            console.error('Error fetching assessments:', error);
-            return [];
+            console.error('Register error:', error);
+            return { 
+                success: false, 
+                error: error.message || 'Registration failed' 
+            };
         }
     },
-
-    // Game Score APIs
-    async saveGameScore(scoreData) {
+    
+    login: async (credentials) => {
+        console.log('AuthAPI.login called with email:', credentials.email);
+        
         try {
-            const userId = this.getCurrentUserId();
-            const response = await fetch(`${CONFIG.API_BASE_URL}/game/score`, {
+            const result = await apiCall(API_CONFIG.ENDPOINTS.LOGIN, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    ...scoreData,
-                    userId: userId
-                })
+                body: JSON.stringify(credentials)
             });
             
-            if (!response.ok) {
-                throw new Error('Failed to save game score');
+            console.log('Login API result:', result);
+            
+            // Handle nested response from ApiResponseDTO
+            if (result && result.success && result.data) {
+                if (result.data.success) {
+                    return { 
+                        success: true, 
+                        data: result.data.data 
+                    };
+                } else {
+                    return { 
+                        success: false, 
+                        error: result.data.message || 'Login failed' 
+                    };
+                }
             }
             
-            return await response.json();
+            // If result is not successful
+            if (result && !result.success) {
+                return { 
+                    success: false, 
+                    error: result.error || 'Login failed' 
+                };
+            }
+            
+            return result;
+            
         } catch (error) {
-            console.error('Error saving game score:', error);
-            throw error;
+            console.error('Login error:', error);
+            return { 
+                success: false, 
+                error: error.message || 'Login failed' 
+            };
         }
+    }
+};
+
+export const AssessmentAPI = {
+
+    submitAssessment: async (assessmentData) => {
+        return await apiCall("/api/stress/assess", {
+            method: "POST",
+            body: JSON.stringify(assessmentData)
+        });
     },
 
-    async getUserGameScores() {
-        try {
-            const userId = this.getCurrentUserId();
-            if (!userId) return [];
-            
-            const response = await fetch(`${CONFIG.API_BASE_URL}/game/scores/${userId}`);
-            
-            if (!response.ok) {
-                throw new Error('Failed to fetch game scores');
-            }
-            
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching game scores:', error);
-            return [];
-        }
+    getUserAssessments: async (userId) => {
+        return await apiCall(`/api/stress/history/${userId}`);
+    }
+};
+
+
+
+
+// User APIs
+const UserAPI = {
+    getProfile: async () => {
+        return await apiCall(API_CONFIG.ENDPOINTS.USER_PROFILE);
+    },
+    
+    updateProfile: async (profileData) => {
+        return await apiCall(API_CONFIG.ENDPOINTS.UPDATE_PROFILE, {
+            method: 'PUT',
+            body: JSON.stringify(profileData)
+        });
+    }
+};
+export const ChatAPI = {
+
+    sendMessage: async (userId, message) => {
+        return await apiCall("/api/chat/send", {
+            method: "POST",
+            body: JSON.stringify({
+                userId: userId,
+                message: message
+            })
+        });
+    },
+
+    getHistory: async (userId) => {
+        return await apiCall(`/api/chat/history/${userId}`);
     }
 };
