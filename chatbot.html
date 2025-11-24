@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stress Relief Chatbot</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 700px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+
+        #chat-box {
+            height: 450px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .user-msg {
+            text-align: right;
+            padding: 10px;
+            margin: 5px;
+            background: #c7eaff;
+            display: inline-block;
+            max-width: 80%;
+            border-radius: 10px;
+        }
+
+        .bot-msg {
+            text-align: left;
+            padding: 10px;
+            margin: 5px;
+            background: #e7e7e7;
+            display: inline-block;
+            max-width: 80%;
+            border-radius: 10px;
+        }
+
+        #message-input {
+            width: 80%;
+            padding: 10px;
+        }
+
+        #send-btn {
+            padding: 10px 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="chat-container">
+    <h2>🤖 Stress Relief Chatbot</h2>
+
+    <div id="chat-box"></div>
+
+    <br>
+
+    <input id="message-input" type="text" placeholder="Type your message..."/>
+    <button id="send-btn">Send</button>
+</div>
+
+<script src="chatbot.js"></script>
+
+</body>
+</html>
