@@ -1,185 +1,208 @@
-// Check if user is logged in when page loads
-window.addEventListener('DOMContentLoaded', () => {
-    const currentUser = getCurrentUser();
-    
-    // If on index.html and not logged in, redirect to login
-    if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
-        if (!currentUser) {
-            window.location.href = 'login.html';
-        } else {
-            displayWelcomeMessage(currentUser);
-        }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
     }
-});
-
-// Get current logged in user from localStorage
-function getCurrentUser() {
-    const userStr = localStorage.getItem('currentUser');
-    return userStr ? JSON.parse(userStr) : null;
-}
-
-// Save user to localStorage
-function saveUser(user) {
-    localStorage.setItem('currentUser', JSON.stringify(user));
-}
-
-// Remove user from localStorage
-function removeUser() {
-    localStorage.removeItem('currentUser');
-}
-
-// Display welcome message
-function displayWelcomeMessage(user) {
-    const welcomeMessage = document.getElementById('welcomeMessage');
-    if (welcomeMessage) {
-        welcomeMessage.textContent = `Welcome, ${user.username}! 👋`;
-    }
-}
-
-// Handle Login Form Submit
-async function handleLogin(event) {
-    event.preventDefault();
-    
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const loginBtn = document.getElementById('loginBtn');
-    const errorMessage = document.getElementById('errorMessage');
-    const successMessage = document.getElementById('successMessage');
-    
-    // Hide previous messages
-    errorMessage.style.display = 'none';
-    successMessage.style.display = 'none';
-    
-    // Disable button and show loading
-    loginBtn.disabled = true;
-    loginBtn.textContent = 'Logging in...';
-    
-    try {
-        // Call backend API
-        const response = await fetch(`${CONFIG.API_BASE_URL}/user/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                username: username,
-                password: password
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Login successful
-            successMessage.textContent = 'Login successful! Redirecting...';
-            successMessage.style.display = 'block';
-            
-            // Save user data
-            saveUser(data);
-            
-            // Redirect to main page after 1 second
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1000);
-            
-        } else {
-            // Login failed
-            errorMessage.textContent = data.error || 'Invalid username or password';
-            errorMessage.style.display = 'block';
-            loginBtn.disabled = false;
-            loginBtn.textContent = 'Login';
-        }
-        
-    } catch (error) {
-        console.error('Login error:', error);
-        errorMessage.textContent = 'Unable to connect to server. Please try again.';
-        errorMessage.style.display = 'block';
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Login';
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-// Handle Register Form Submit
-async function handleRegister(event) {
-    event.preventDefault();
-    
-    const username = document.getElementById('username').value;
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-    const registerBtn = document.getElementById('registerBtn');
-    const errorMessage = document.getElementById('errorMessage');
-    const successMessage = document.getElementById('successMessage');
-    
-    // Hide previous messages
-    errorMessage.style.display = 'none';
-    successMessage.style.display = 'none';
-    
-    // Validate passwords match
-    if (password !== confirmPassword) {
-        errorMessage.textContent = 'Passwords do not match!';
-        errorMessage.style.display = 'block';
-        return;
-    }
-    
-    // Validate password length
-    if (password.length < 6) {
-        errorMessage.textContent = 'Password must be at least 6 characters long!';
-        errorMessage.style.display = 'block';
-        return;
-    }
-    
-    // Disable button and show loading
-    registerBtn.disabled = true;
-    registerBtn.textContent = 'Creating Account...';
-    
-    try {
-        // Call backend API
-        const response = await fetch(`${CONFIG.API_BASE_URL}/user/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                username: username,
-                email: email,
-                password: password
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            // Registration successful
-            successMessage.textContent = 'Account created successfully! Redirecting to login...';
-            successMessage.style.display = 'block';
-            
-            // Redirect to login page after 2 seconds
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 2000);
-            
-        } else {
-            // Registration failed
-            errorMessage.textContent = data.error || 'Registration failed. Please try again.';
-            errorMessage.style.display = 'block';
-            registerBtn.disabled = false;
-            registerBtn.textContent = 'Create Account';
-        }
-        
-    } catch (error) {
-        console.error('Registration error:', error);
-        errorMessage.textContent = 'Unable to connect to server. Please try again.';
-        errorMessage.style.display = 'block';
-        registerBtn.disabled = false;
-        registerBtn.textContent = 'Create Account';
-    }
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
-// Handle Logout
-function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        removeUser();
-        window.location.href = 'login.html';
+.auth-header h1 {
+    color: #667eea;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+    color: #666;
+    font-size: 1rem;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.9rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+.checkbox-label span {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.forgot-password {
+    color: #667eea;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s;
+}
+
+.forgot-password:hover {
+    color: #764ba2;
+}
+
+/* Button Styles */
+.btn-primary {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Messages */
+.error-message {
+    background: #ffebee;
+    color: #c62828;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    border-left: 4px solid #c62828;
+    font-size: 0.9rem;
+}
+
+.success-message {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    border-left: 4px solid #2e7d32;
+    font-size: 0.9rem;
+}
+
+/* Footer */
+.auth-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.auth-footer p {
+    color: #666;
+    font-size: 0.95rem;
+}
+
+.auth-footer a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s;
+}
+
+.auth-footer a:hover {
+    color: #764ba2;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .auth-header h1 {
+        font-size: 2rem;
+    }
+
+    .form-options {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
